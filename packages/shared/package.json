@@ -1,6 +1,6 @@
 {
   "name": "@yaowo/shared",
-  "version": "0.1.8",
+  "version": "0.1.7",
   "private": true,
   "type": "module",
   "main": "dist/src/index.js",

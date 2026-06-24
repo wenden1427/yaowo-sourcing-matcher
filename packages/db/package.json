@@ -1,6 +1,6 @@
 {
   "name": "@yaowo/db",
-  "version": "0.1.8",
+  "version": "0.1.7",
   "private": true,
   "type": "module",
   "main": "dist/src/index.js",
@@ -11,7 +11,7 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@yaowo/core": "0.1.8",
-    "@yaowo/shared": "0.1.8"
+    "@yaowo/core": "0.1.7",
+    "@yaowo/shared": "0.1.7"
   }
 }
