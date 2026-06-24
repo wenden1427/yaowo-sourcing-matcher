@@ -40,11 +40,15 @@ describe("app.asar update installer", () => {
     });
 
     await expect(stat(result.downloadedPath)).rejects.toThrow();
-    const script = await readFile(result.scriptPath, "utf8");
+    const scriptBytes = await readFile(result.scriptPath);
+    expect(Array.from(scriptBytes.subarray(0, 3))).toEqual([0xef, 0xbb, 0xbf]);
+    const script = scriptBytes.toString("utf8");
     expect(script).toContain("Wait-Process -Id $pidToWait");
     expect(script).toContain("Invoke-WebRequest -Uri $downloadUrl -OutFile $downloadedPath");
     expect(script).toContain("Get-FileHash -Algorithm SHA256");
+    expect(script).toContain("Write-UpdateLog");
     expect(script).toContain("App update sha256 mismatch");
+    expect(result.logPath).toContain("apply-app-asar-update.log");
     expect(result.sha256).toBe("abc123");
     expect(fetchImpl).not.toHaveBeenCalled();
   });
@@ -57,6 +61,7 @@ describe("app.asar update installer", () => {
       downloadedPath: "C:\\Temp\\yaowo's\\app.asar",
       targetPath: "C:\\App\\resources\\app.asar",
       backupPath: "C:\\Temp\\backup.asar",
+      logPath: "C:\\Temp\\update.log",
       executablePath: "C:\\App\\耀我货源匹配.exe"
     });
 

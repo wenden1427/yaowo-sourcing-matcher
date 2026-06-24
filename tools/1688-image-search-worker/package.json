@@ -1,6 +1,6 @@
 {
   "name": "1688-image-search-worker",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "private": true,
   "type": "module",
   "main": "dist/src/worker.js",

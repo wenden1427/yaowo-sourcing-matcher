@@ -18,6 +18,7 @@ export interface InstallAppAsarUpdateResult {
   stagingDir: string;
   downloadedPath: string;
   scriptPath: string;
+  logPath: string;
   targetPath: string;
   backupPath: string;
   sha256: string;
@@ -41,18 +42,20 @@ export async function installAppAsarUpdate(input: InstallAppAsarUpdateInput): Pr
 
   const backupPath = join(stagingDir, `app.asar.backup-${Date.now()}`);
   const scriptPath = join(stagingDir, "apply-app-asar-update.ps1");
+  const logPath = join(stagingDir, "apply-app-asar-update.log");
+  const script = buildApplyAppAsarScript({
+    currentProcessId: input.currentProcessId,
+    downloadUrl: input.updatePackage.url,
+    expectedSha256: sha256,
+    downloadedPath,
+    targetPath,
+    backupPath,
+    executablePath: input.executablePath,
+    logPath
+  });
   await writeFile(
     scriptPath,
-    buildApplyAppAsarScript({
-      currentProcessId: input.currentProcessId,
-      downloadUrl: input.updatePackage.url,
-      expectedSha256: sha256,
-      downloadedPath,
-      targetPath,
-      backupPath,
-      executablePath: input.executablePath
-    }),
-    "utf8"
+    Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(script, "utf8")])
   );
 
   childProcess.spawn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptPath], {
@@ -65,6 +68,7 @@ export async function installAppAsarUpdate(input: InstallAppAsarUpdateInput): Pr
     stagingDir,
     downloadedPath,
     scriptPath,
+    logPath,
     targetPath,
     backupPath,
     sha256
@@ -79,6 +83,7 @@ export function buildApplyAppAsarScript(input: {
   targetPath: string;
   backupPath: string;
   executablePath: string;
+  logPath: string;
 }): string {
   return [
     "$ErrorActionPreference = 'Stop'",
@@ -90,20 +95,33 @@ export function buildApplyAppAsarScript(input: {
     `$targetPath = ${quotePowerShellString(input.targetPath)}`,
     `$backupPath = ${quotePowerShellString(input.backupPath)}`,
     `$exePath = ${quotePowerShellString(input.executablePath)}`,
+    `$logPath = ${quotePowerShellString(input.logPath)}`,
+    "function Write-UpdateLog {",
+    "  param([string]$Message)",
+    "  $timestamp = Get-Date -Format o",
+    "  Add-Content -LiteralPath $logPath -Encoding UTF8 -Value \"$timestamp $Message\"",
+    "}",
     "try {",
+    "  Write-UpdateLog 'Waiting for current app process to exit.'",
     "  Wait-Process -Id $pidToWait -Timeout 30 -ErrorAction SilentlyContinue",
     "  Start-Sleep -Milliseconds 800",
+    "  Write-UpdateLog \"Downloading update package from $downloadUrl\"",
     "  Invoke-WebRequest -Uri $downloadUrl -OutFile $downloadedPath -UseBasicParsing",
     "  $actualSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $downloadedPath).Hash.ToLowerInvariant()",
     "  if ($actualSha256 -ne $expectedSha256) {",
     "    throw \"App update sha256 mismatch: expected $expectedSha256, got $actualSha256\"",
     "  }",
+    "  Write-UpdateLog 'Update package hash verified.'",
     "  Copy-Item -LiteralPath $targetPath -Destination $backupPath -Force",
     "  Copy-Item -LiteralPath $downloadedPath -Destination $targetPath -Force",
+    "  Write-UpdateLog 'app.asar replaced. Restarting app.'",
     "  Start-Process -FilePath $exePath",
+    "  Write-UpdateLog 'App restart command issued.'",
     "} catch {",
+    "  Write-UpdateLog (\"ERROR: \" + $_.Exception.Message)",
     "  if ((Test-Path -LiteralPath $backupPath) -and (Test-Path -LiteralPath $targetPath)) {",
     "    Copy-Item -LiteralPath $backupPath -Destination $targetPath -Force",
+    "    Write-UpdateLog 'Restored app.asar from backup after failure.'",
     "  }",
     "  throw",
     "}"
