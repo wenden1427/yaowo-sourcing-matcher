@@ -1,0 +1,62 @@
+{
+  "name": "yaowo-sourcing-matcher",
+  "version": "0.1.5",
+  "private": true,
+  "type": "module",
+  "main": "apps/desktop/dist/src/main/main.js",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "tools/1688-image-search-worker"
+  ],
+  "scripts": {
+    "build": "npm --workspace @yaowo/shared run build && npm --workspace @yaowo/core run build && npm --workspace @yaowo/db run build && npm --workspace 1688-image-search-worker run build && npm --workspace @yaowo/desktop run build",
+    "clean:release": "tsx scripts/clean-release.ts",
+    "prepare:desktop-resources": "tsx scripts/prepare-desktop-resources.ts",
+    "package:desktop": "npm run clean:release && npm run prepare:desktop-resources && npm run build && electron-builder --win zip --publish never",
+    "test": "vitest run",
+    "typecheck": "tsc -b",
+    "sensitive-scan": "tsx scripts/sensitive-scan.ts"
+  },
+  "dependencies": {
+    "@yaowo/core": "0.1.5",
+    "@yaowo/db": "0.1.5",
+    "@yaowo/shared": "0.1.5",
+    "1688-image-search-worker": "0.1.5",
+    "commander": "^12.1.0",
+    "exceljs": "^4.4.0",
+    "playwright": "^1.48.0",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "electron-builder": "^26.15.3",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "build": {
+    "appId": "com.yaowo.sourcingmatcher",
+    "productName": "耀我货源匹配",
+    "directories": {
+      "output": "release/desktop"
+    },
+    "artifactName": "${productName}.${ext}",
+    "asarUnpack": [
+      "**/*.node"
+    ],
+    "files": [
+      "apps/desktop/dist/**/*",
+      "apps/desktop/resources/**/*",
+      "packages/*/dist/**/*",
+      "tools/1688-image-search-worker/dist/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "zip"
+      ]
+    }
+  }
+}

@@ -1,0 +1,30 @@
+import { contextBridge, ipcRenderer } from "electron";
+
+contextBridge.exposeInMainWorld("yaowo", {
+  getAppVersion: () => ipcRenderer.invoke("app:version"),
+  listBatches: () => ipcRenderer.invoke("batches:list"),
+  importWorkbook: (input: unknown) => ipcRenderer.invoke("workbook:import", input),
+  exportSourcedWorkbook: (batchId: number) => ipcRenderer.invoke("workbook:exportSourced", batchId),
+  exportFullReviewWorkbook: (batchId: number) => ipcRenderer.invoke("workbook:exportFullReview", batchId),
+  open1688Login: () => ipcRenderer.invoke("1688:openLogin"),
+  runNextImageSearchJob: (batchId: number) => ipcRenderer.invoke("search:runNext", batchId),
+  runParentImageSearchJob: (input: unknown) => ipcRenderer.invoke("search:runParent", input),
+  runBatchImageSearchJobs: (batchId: number) => ipcRenderer.invoke("search:runBatch", batchId),
+  stopBatchImageSearchJobs: (batchId: number) => ipcRenderer.invoke("search:stopBatch", batchId),
+  resetFailedImageSearchJobs: (batchId: number) => ipcRenderer.invoke("search:resetFailed", batchId),
+  resetRunningImageSearchJobs: (batchId: number) => ipcRenderer.invoke("search:resetRunning", batchId),
+  listFailedImageSearchJobs: (batchId: number) => ipcRenderer.invoke("search:listFailed", batchId),
+  getAiProviderStatus: () => ipcRenderer.invoke("settings:aiStatus"),
+  saveAiSettings: (input: unknown) => ipcRenderer.invoke("settings:aiSave", input),
+  testAiVisionConnection: () => ipcRenderer.invoke("settings:aiTestVision"),
+  testAiOcrConnection: () => ipcRenderer.invoke("settings:aiTestOcr"),
+  openLogsDir: () => ipcRenderer.invoke("log:openDir"),
+  runBatchAiReview: (batchId: number, input?: unknown) => ipcRenderer.invoke("ai:reviewBatch", input ? { batchId, ...input } : batchId),
+  listReviewItems: (batchId: number) => ipcRenderer.invoke("review:list", batchId),
+  saveManualPrices: (input: unknown) => ipcRenderer.invoke("review:saveManualPrices", input),
+  savePricingDraft: (input: unknown) => ipcRenderer.invoke("review:savePricingDraft", input),
+  saveManualSourcedReview: (input: unknown) => ipcRenderer.invoke("review:saveManualSourced", input),
+  markParentNoSource: (input: unknown) => ipcRenderer.invoke("review:markNoSource", input),
+  setParentExcluded: (input: unknown) => ipcRenderer.invoke("review:setParentExcluded", input),
+  setChildExcluded: (input: unknown) => ipcRenderer.invoke("review:setChildExcluded", input)
+});

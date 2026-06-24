@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/shared" },
+    { "path": "./packages/core" },
+    { "path": "./packages/db" },
+    { "path": "./tools/1688-image-search-worker" },
+    { "path": "./apps/desktop" }
+  ]
+}

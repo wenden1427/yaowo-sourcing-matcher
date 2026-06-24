@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "jsx": "react-jsx",
+    "outDir": "dist",
+    "rootDir": ".",
+    "types": ["vitest/globals", "@testing-library/jest-dom"]
+  },
+  "references": [
+    { "path": "../../packages/core" },
+    { "path": "../../packages/db" },
+    { "path": "../../packages/shared" },
+    { "path": "../../tools/1688-image-search-worker" }
+  ],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.cts", "tests/**/*.ts", "tests/**/*.tsx", "vite.config.ts"]
+}

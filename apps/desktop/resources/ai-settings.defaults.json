@@ -1,0 +1,9 @@
+{
+  "provider": "zhipu",
+  "visionModel": "glm-4.6v-flashx",
+  "ocrModel": "glm-ocr",
+  "chatCompletionsUrl": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+  "ocrUrl": "https://open.bigmodel.cn/api/paas/v4/layout_parsing",
+  "deepseekModel": "deepseek-v4-flash",
+  "deepseekChatCompletionsUrl": "https://api.deepseek.com/chat/completions"
+}
