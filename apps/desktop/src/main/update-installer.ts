@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { appendFileSync, existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import * as childProcess from "node:child_process";
@@ -18,7 +18,9 @@ export interface InstallAppAsarUpdateResult {
   stagingDir: string;
   downloadedPath: string;
   scriptPath: string;
+  launcherPath: string;
   logPath: string;
+  launcherLogPath: string;
   targetPath: string;
   backupPath: string;
   sha256: string;
@@ -42,7 +44,9 @@ export async function installAppAsarUpdate(input: InstallAppAsarUpdateInput): Pr
 
   const backupPath = join(stagingDir, `app.asar.backup-${Date.now()}`);
   const scriptPath = join(stagingDir, "apply-app-asar-update.ps1");
+  const launcherPath = join(stagingDir, "run-app-asar-update.cmd");
   const logPath = join(stagingDir, "apply-app-asar-update.log");
+  const launcherLogPath = join(stagingDir, "apply-app-asar-update.launcher.log");
   const script = buildApplyAppAsarScript({
     currentProcessId: input.currentProcessId,
     downloadUrl: input.updatePackage.url,
@@ -57,18 +61,32 @@ export async function installAppAsarUpdate(input: InstallAppAsarUpdateInput): Pr
     scriptPath,
     Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(script, "utf8")])
   );
+  await writeFile(
+    launcherPath,
+    buildUpdateLauncherScript({
+      scriptPath,
+      launcherLogPath
+    }),
+    "utf8"
+  );
 
-  childProcess.spawn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptPath], {
+  const launcher = childProcess.spawn(resolveCmdPath(), ["/d", "/s", "/c", launcherPath], {
     detached: true,
     stdio: "ignore",
     windowsHide: true
-  }).unref();
+  });
+  launcher.once("error", (error) => {
+    appendLauncherLog(launcherLogPath, `spawn error: ${error instanceof Error ? error.message : String(error)}`);
+  });
+  launcher.unref();
 
   return {
     stagingDir,
     downloadedPath,
     scriptPath,
+    launcherPath,
     logPath,
+    launcherLogPath,
     targetPath,
     backupPath,
     sha256
@@ -128,6 +146,38 @@ export function buildApplyAppAsarScript(input: {
   ].join("\r\n");
 }
 
+export function buildUpdateLauncherScript(input: { scriptPath: string; launcherLogPath: string }): string {
+  return [
+    "@echo off",
+    "setlocal",
+    `set "LAUNCHER_LOG=${escapeCmdValue(input.launcherLogPath)}"`,
+    `set "UPDATE_SCRIPT=${escapeCmdValue(input.scriptPath)}"`,
+    `>>"%LAUNCHER_LOG%" echo [%date% %time%] launcher starting`,
+    `set "POWERSHELL_EXE=%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"`,
+    `if not exist "%POWERSHELL_EXE%" set "POWERSHELL_EXE=powershell.exe"`,
+    `>>"%LAUNCHER_LOG%" echo [%date% %time%] using "%POWERSHELL_EXE%"`,
+    `start "" /min "%POWERSHELL_EXE%" -NoProfile -ExecutionPolicy Bypass -File "%UPDATE_SCRIPT%"`,
+    `>>"%LAUNCHER_LOG%" echo [%date% %time%] start command exit code %ERRORLEVEL%`,
+    "endlocal"
+  ].join("\r\n");
+}
+
 function quotePowerShellString(value: string): string {
   return `'${value.replace(/'/g, "''")}'`;
+}
+
+function resolveCmdPath(): string {
+  return process.env.ComSpec || join(process.env.SystemRoot || "C:\\Windows", "System32", "cmd.exe");
+}
+
+function appendLauncherLog(logPath: string, message: string): void {
+  try {
+    appendFileSync(logPath, `${new Date().toISOString()} ${message}\n`, "utf8");
+  } catch {
+    // The update attempt must not crash the running app because logging failed.
+  }
+}
+
+function escapeCmdValue(value: string): string {
+  return value.replace(/%/g, "%%");
 }

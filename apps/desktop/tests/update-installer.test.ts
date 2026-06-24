@@ -2,11 +2,12 @@ import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises"
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import * as childProcess from "node:child_process";
 
 import { buildApplyAppAsarScript, installAppAsarUpdate } from "../src/main/update-installer.js";
 
 vi.mock("node:child_process", () => ({
-  spawn: vi.fn(() => ({ unref: vi.fn() }))
+  spawn: vi.fn(() => ({ once: vi.fn(), unref: vi.fn() }))
 }));
 
 const tempDirs: string[] = [];
@@ -49,6 +50,20 @@ describe("app.asar update installer", () => {
     expect(script).toContain("Write-UpdateLog");
     expect(script).toContain("App update sha256 mismatch");
     expect(result.logPath).toContain("apply-app-asar-update.log");
+    expect(result.launcherPath).toContain("run-app-asar-update.cmd");
+    const launcher = await readFile(result.launcherPath, "utf8");
+    expect(launcher).toContain("apply-app-asar-update.launcher.log");
+    expect(launcher).toContain("%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
+    expect(launcher).toContain("start \"\" /min");
+    expect(childProcess.spawn).toHaveBeenCalledWith(
+      expect.stringContaining("cmd.exe"),
+      expect.arrayContaining(["/d", "/s", "/c", result.launcherPath]),
+      expect.objectContaining({
+        detached: true,
+        stdio: "ignore",
+        windowsHide: true
+      })
+    );
     expect(result.sha256).toBe("abc123");
     expect(fetchImpl).not.toHaveBeenCalled();
   });

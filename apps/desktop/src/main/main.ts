@@ -151,7 +151,8 @@ function registerIpcHandlers(): void {
   ipcMain.handle("update:check", async () => {
     try {
       const result = await checkGithubUpdate({
-        repository: DEFAULT_UPDATE_REPOSITORY,
+        repository: getUpdateRepository(),
+        branch: getUpdateBranch(),
         currentVersion: app.getVersion(),
         fetchImpl: net.fetch as typeof fetch
       });
@@ -188,7 +189,8 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle("update:installAppAsar", async () => {
     const result = await checkGithubUpdate({
-      repository: DEFAULT_UPDATE_REPOSITORY,
+      repository: getUpdateRepository(),
+      branch: getUpdateBranch(),
       currentVersion: app.getVersion(),
       fetchImpl: net.fetch as typeof fetch
     });
@@ -791,7 +793,8 @@ const SAMPLE_OCR_IMAGE_DATA_URI =
 async function checkStartupUpdate(): Promise<void> {
   try {
     const result = await checkGithubUpdate({
-      repository: DEFAULT_UPDATE_REPOSITORY,
+      repository: getUpdateRepository(),
+      branch: getUpdateBranch(),
       currentVersion: app.getVersion(),
       fetchImpl: net.fetch as typeof fetch
     });
@@ -855,6 +858,14 @@ async function checkStartupUpdate(): Promise<void> {
       details: error
     });
   }
+}
+
+function getUpdateRepository(): string {
+  return process.env.YAOWO_UPDATE_REPOSITORY?.trim() || DEFAULT_UPDATE_REPOSITORY;
+}
+
+function getUpdateBranch(): string | undefined {
+  return process.env.YAOWO_UPDATE_BRANCH?.trim() || undefined;
 }
 
 app.whenReady().then(async () => {
