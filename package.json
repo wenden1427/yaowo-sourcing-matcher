@@ -1,6 +1,6 @@
 {
   "name": "yaowo-sourcing-matcher",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "type": "module",
   "main": "apps/desktop/dist/src/main/main.js",
@@ -19,10 +19,10 @@
     "sensitive-scan": "tsx scripts/sensitive-scan.ts"
   },
   "dependencies": {
-    "@yaowo/core": "0.1.5",
-    "@yaowo/db": "0.1.5",
-    "@yaowo/shared": "0.1.5",
-    "1688-image-search-worker": "0.1.5",
+    "@yaowo/core": "0.1.6",
+    "@yaowo/db": "0.1.6",
+    "@yaowo/shared": "0.1.6",
+    "1688-image-search-worker": "0.1.6",
     "commander": "^12.1.0",
     "exceljs": "^4.4.0",
     "playwright": "^1.48.0",
